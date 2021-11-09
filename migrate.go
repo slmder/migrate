@@ -134,7 +134,7 @@ func (m *manager) Generate() error {
 		if !ok {
 			panic("No caller information")
 		}
-		m.templatePath = fmt.Sprintf("%s/migrate.go.tpl", path.Dir(filename))
+		m.templatePath = fmt.Sprintf("%s/version.go.tpl", path.Dir(filename))
 	}
 	b, err := ioutil.ReadFile(m.templatePath)
 	if err != nil {
