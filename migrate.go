@@ -186,6 +186,9 @@ func (m *manager) run(ctx context.Context, direction Direction, mode Transaction
 		if err != nil {
 			return err
 		}
+		if err := m.lockTable(tx); err != nil {
+			return err
+		}
 		defer func(tx *sqlx.Tx, err error) {
 			err = tx.Commit()
 			if err != nil {
@@ -199,14 +202,18 @@ func (m *manager) run(ctx context.Context, direction Direction, mode Transaction
 			if err != nil {
 				return err
 			}
+			if err := m.lockTable(tx); err != nil {
+				return err
+			}
 		}
 		index, err := versionIndex(version)
 		if err != nil {
 			return err
 		}
 		migration := PassedMigration{Version: index, CreatedAt: time.Now()}
+		_, passed := passedMigrationsMap[index]
 		if direction == DirectionUp {
-			if _, passed := passedMigrationsMap[index]; !passed {
+			if !passed {
 				m.logger.Infof("upgrading to version %d...", index)
 				if err := version.Up(tx); err != nil {
 					return err
@@ -218,7 +225,7 @@ func (m *manager) run(ctx context.Context, direction Direction, mode Transaction
 				m.logger.Infof("skipping passed version %d...", index)
 			}
 		} else {
-			if _, passed := passedMigrationsMap[index]; passed {
+			if passed {
 				m.logger.Infof("downgrading version %d...", index)
 				if err := version.Down(tx); err != nil {
 					return err
