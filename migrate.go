@@ -273,7 +273,7 @@ func versionIndex(version Version) (uint64, error) {
 }
 
 func (m *manager) createTableIfNotExists() error {
-	_, err := m.conn.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (version BIGINT, created_at TIMESTAMP);`, m.tableName))
+	_, err := m.conn.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (version BIGINT UNIQUE, created_at TIMESTAMP);`, m.tableName))
 	return err
 }
 
