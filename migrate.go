@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -18,6 +17,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 const defTableName = "schema_migrations"
@@ -189,12 +190,17 @@ func (m *manager) run(ctx context.Context, direction Direction, mode Transaction
 		if err := m.lockTable(tx); err != nil {
 			return err
 		}
-		defer func(tx *sqlx.Tx, err error) {
-			err = tx.Commit()
-			if err != nil {
+		defer func(tx *sqlx.Tx) {
+			if er != nil {
+				if err := tx.Rollback(); err != nil {
+					m.logger.Errorf("Transaction rollback err: %s", er)
+				}
+				return
+			}
+			if err := tx.Commit(); err != nil {
 				m.logger.Errorf("Transaction commit err: %s", err)
 			}
-		}(tx, er)
+		}(tx)
 	}
 	for _, version := range versions {
 		if TransactionModeIndividual == mode {
